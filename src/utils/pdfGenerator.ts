@@ -2,12 +2,12 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
-interface VendorResult {
-  category: string;
-  result: string;
-  method: string;
-  engine_name: string;
-}
+// interface VendorResult {
+//   category: string;
+//   result: string;
+//   method: string;
+//   engine_name: string;
+// }
 
 export const generatePdfReport = (reportData: any) => {
   const doc = new jsPDF();
