@@ -5,6 +5,7 @@ interface Vulnerability {
   type: string;
   severity: string;
   confidence: string;
+  details?: string;
 }
 
 interface ReportPreviewProps {
@@ -17,9 +18,14 @@ interface ReportPreviewProps {
       harmless: number;
       undetected: number;
     };
-
     permalink?: string;
-    rawData?: any; // Add raw data for PDF report
+    rawData?: any;
+    scanDetails?: {
+      lastAnalysisDate?: string;
+      categories?: Record<string, string>;
+      reputation?: number;
+      totalVendors?: number;
+    };
   };
 }
 
@@ -37,6 +43,37 @@ const ReportPreview = ({ report }: ReportPreviewProps) => {
           <p className="text-lg mb-2">
             <span className="font-semibold">Summary:</span> {report.summary}
           </p>
+
+          {report.scanDetails && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 mb-6">
+              <div className="bg-gray-700/50 p-3 rounded-lg">
+                <p className="text-sm text-gray-400">Last Scan</p>
+                <p className="text-sm font-medium">
+                  {report.scanDetails.lastAnalysisDate || "N/A"}
+                </p>
+              </div>
+              <div className="bg-gray-700/50 p-3 rounded-lg">
+                <p className="text-sm text-gray-400">Reputation</p>
+                <p className="text-sm font-medium">
+                  {report.scanDetails.reputation || "N/A"}
+                </p>
+              </div>
+              <div className="bg-gray-700/50 p-3 rounded-lg">
+                <p className="text-sm text-gray-400">Total Vendors</p>
+                <p className="text-sm font-medium">
+                  {report.scanDetails.totalVendors || "N/A"}
+                </p>
+              </div>
+              <div className="bg-gray-700/50 p-3 rounded-lg">
+                <p className="text-sm text-gray-400">Categories</p>
+                <p className="text-sm font-medium">
+                  {report.scanDetails.categories
+                    ? Object.values(report.scanDetails.categories).join(", ")
+                    : "N/A"}
+                </p>
+              </div>
+            </div>
+          )}
 
           {report.stats && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
@@ -95,11 +132,17 @@ const ReportPreview = ({ report }: ReportPreviewProps) => {
                   {vuln.severity} Risk
                 </span>
               </div>
-              <div className="mt-2">
+              <div className="mt-2 space-y-1">
                 <p>
                   <span className="text-gray-400">Confidence:</span>{" "}
                   <span className="font-semibold">{vuln.confidence}</span>
                 </p>
+                {vuln.details && (
+                  <p>
+                    <span className="text-gray-400">Details:</span>{" "}
+                    <span className="font-medium">{vuln.details}</span>
+                  </p>
+                )}
               </div>
             </div>
           ))}

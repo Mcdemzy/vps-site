@@ -1,3 +1,4 @@
+// src/pages/LandingPage.tsx
 import { useState } from "react";
 import Navbar from "../components/Navbar";
 import HeroSection from "../components/HeroSection";
@@ -12,6 +13,7 @@ interface Vulnerability {
   type: string;
   severity: string;
   confidence: string;
+  details?: string;
 }
 
 interface ScanReport {
@@ -24,6 +26,13 @@ interface ScanReport {
     undetected: number;
   };
   permalink?: string;
+  rawData?: any;
+  scanDetails?: {
+    lastAnalysisDate?: string;
+    categories?: Record<string, string>;
+    reputation?: number;
+    totalVendors?: number;
+  };
 }
 
 const LandingPage = () => {
@@ -34,7 +43,7 @@ const LandingPage = () => {
   const handleScan = async (url: string) => {
     setIsScanning(true);
     setError(null);
-    setReport(null); // Clear previous results
+    setReport(null);
 
     try {
       const result = await scanUrl(url);
@@ -47,7 +56,6 @@ const LandingPage = () => {
       setReport(transformedReport);
     } catch (err) {
       console.error("Scan error:", err);
-
       let errorMessage = "Scan failed. Please try again.";
       if (axios.isAxiosError(err)) {
         if (err.response?.status === 429) {
@@ -59,7 +67,6 @@ const LandingPage = () => {
       } else if (err instanceof Error) {
         errorMessage = err.message;
       }
-
       setError(errorMessage);
     } finally {
       setIsScanning(false);
@@ -67,9 +74,13 @@ const LandingPage = () => {
   };
 
   const transformVirusTotalData = (data: any): ScanReport => {
-    const stats = data.data.attributes.stats;
+    const attributes = data.data.attributes;
+    const stats = attributes.stats;
     const maliciousCount = stats.malicious;
     const suspiciousCount = stats.suspicious;
+    const lastAnalysisDate = attributes.last_analysis_date
+      ? new Date(attributes.last_analysis_date * 1000).toLocaleString()
+      : "N/A";
 
     const vulnerabilities: Vulnerability[] = [];
 
@@ -79,6 +90,7 @@ const LandingPage = () => {
         type: "Malicious URL Detected",
         severity: maliciousCount > 5 ? "High" : "Medium",
         confidence: `${Math.min(100, maliciousCount * 15)}%`,
+        details: `Detected by ${maliciousCount} security vendors`,
       });
     }
 
@@ -88,6 +100,7 @@ const LandingPage = () => {
         type: "Suspicious Activity Detected",
         severity: "Low",
         confidence: `${suspiciousCount * 10}%`,
+        details: `Detected by ${suspiciousCount} security vendors`,
       });
     }
 
@@ -97,6 +110,7 @@ const LandingPage = () => {
         type: "No Threats Detected",
         severity: "None",
         confidence: "100%",
+        details: "No security vendors flagged this URL as malicious",
       });
     }
 
@@ -114,7 +128,15 @@ const LandingPage = () => {
       vulnerabilities,
       summary,
       stats,
-      permalink: data.meta?.url_info?.url || "https://www.virustotal.com",
+      permalink: data.data.links?.self || "https://www.virustotal.com",
+      rawData: data.data,
+      scanDetails: {
+        lastAnalysisDate,
+        categories: attributes.categories,
+        reputation: attributes.reputation,
+        totalVendors: Object.keys(attributes.last_analysis_results || {})
+          .length,
+      },
     };
   };
 
